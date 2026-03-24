@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gudang App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f8;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h2 { margin-top: 20px; }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>📦 Request Barang</h2>
+
+  <div class="card">
+    <select id="kode"></select>
+    <input type="number" id="qty" placeholder="Qty">
+    <button onclick="submit()">Kirim</button>
+  </div>
+
+  <h2>📋 Pending</h2>
+  <div id="list"></div>
+
+  <script>
+    const API = "URL_GAS_LU"; // GANTI
+
+    async function loadBarang() {
+      const res = await fetch(API + "?action=getBarang");
+      const data = await res.json();
+
+      let html = "<option value=''>Pilih Barang</option>";
+      data.forEach(b => {
+        html += `<option value="${b.kode}">${b.nama}</option>`;
+      });
+
+      document.getElementById("kode").innerHTML = html;
+    }
+
+    async function loadPending() {
+      const res = await fetch(API + "?action=getPending");
+      const data = await res.json();
+
+      let html = "";
+
+      data.forEach(p => {
+        html += `
+          <div class="card">
+            <b>${p.kode}</b> - ${p.qty}<br>
+            <small>${p.user}</small><br><br>
+            <button onclick="approve(${p.row})">Approve</button>
+          </div>
+        `;
+      });
+
+      document.getElementById("list").innerHTML = html || "Tidak ada data";
+    }
+
+    async function submit() {
+      const kode = document.getElementById("kode").value;
+      const qty = document.getElementById("qty").value;
+
+      const res = await fetch(API, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "request",
+          kode,
+          qty
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert("Berhasil");
+        loadPending();
+      }
+    }
+
+    async function approve(row) {
+      const res = await fetch(API, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "approve",
+          row
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else {
+        loadPending();
+      }
+    }
+
+    loadBarang();
+    loadPending();
+  </script>
+
+</body>
+</html>
