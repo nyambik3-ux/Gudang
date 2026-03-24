@@ -1,60 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Gudang App</title>
+  <title>Gudang System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
     body {
       font-family: Arial;
-      background: #f4f6f8;
+      background: #eef2f7;
       padding: 20px;
-      max-width: 500px;
+      max-width: 520px;
       margin: auto;
     }
 
-    h2 { margin-top: 20px; }
+    h2 {
+      margin-top: 25px;
+    }
 
     .card {
       background: white;
       padding: 15px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.08);
     }
 
     input, select, button {
       width: 100%;
-      padding: 10px;
+      padding: 11px;
       margin-top: 8px;
       border-radius: 8px;
       border: 1px solid #ccc;
     }
 
     button {
-      background: #2e7d32;
+      background: #2563eb;
       color: white;
       border: none;
       font-weight: bold;
+      cursor: pointer;
+    }
+
+    .approve {
+      background: #16a34a;
+      margin-top: 10px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .pending { color: orange; font-weight: bold; }
+    .low { color: red; font-weight: bold; }
+    .normal { color: black; }
+
+    .header-box {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 10px;
+      color: #555;
     }
   </style>
 </head>
 
 <body>
 
+  <div class="header-box">
+    <div>🕒 <span id="time"></span></div>
+    <div id="mode">User Mode</div>
+  </div>
+
   <h2>📦 Request Barang</h2>
 
   <div class="card">
     <select id="kode"></select>
     <input type="number" id="qty" placeholder="Qty">
-    <button onclick="submit()">Kirim</button>
+    <input type="text" id="ket" placeholder="Keterangan (opsional)">
+    <button onclick="submit()">Kirim Request</button>
   </div>
 
-  <h2>📋 Pending</h2>
-  <div id="list"></div>
+  <h2>📋 Pending Request</h2>
+  <div id="pending"></div>
+
+  <h2>📊 Stok Barang</h2>
+  <div id="stok"></div>
 
   <script>
     const API = "https://script.google.com/macros/s/AKfycbw67w_GYTmgHbtzQ3o7t-8lacsCRr8pPRaNogEhSj0l02JpuQVbVJvAC4cX9C01F2JZ/exec";
+
+    const IS_ADMIN = true;
+
+    if (IS_ADMIN) {
+      document.getElementById("mode").innerText = "Admin Mode";
+    }
+
+    function updateTime() {
+      document.getElementById("time").innerText = new Date().toLocaleString();
+    }
 
     async function loadBarang() {
       const res = await fetch(API + "?action=getBarang");
@@ -74,44 +118,81 @@
 
       let html = "";
 
+      if (data.length === 0) {
+        html = "<div class='card'>Tidak ada request</div>";
+      }
+
       data.forEach(p => {
         html += `
           <div class="card">
             <b>${p.kode}</b> - ${p.qty}<br>
-            <small>${p.user}</small><br><br>
-            <button onclick="approve(${p.row})">Approve</button>
+            <div class="small">User: ${p.user}</div>
+            <div class="small">Waktu: ${new Date(p.time).toLocaleString()}</div>
+            <div class="small">Ket: ${p.ket || "-"}</div>
+            <div class="pending">PENDING</div>
+            ${IS_ADMIN ? `<button class="approve" onclick="approve(${p.row})">Approve</button>` : ""}
           </div>
         `;
       });
 
-      document.getElementById("list").innerHTML = html || "Tidak ada data";
+      document.getElementById("pending").innerHTML = html;
+    }
+
+    async function loadStok() {
+      const res = await fetch(API + "?action=getStok");
+      const data = await res.json();
+
+      let html = "";
+
+      data.forEach(b => {
+        const warna = b.qty < 10 ? "low" : "normal";
+
+        html += `
+          <div class="card">
+            <b>${b.nama}</b><br>
+            <div class="small">Kode: ${b.kode}</div>
+            <div class="${warna}">Qty: ${b.qty}</div>
+            <div class="small">Last Update: ${b.last_update}</div>
+          </div>
+        `;
+      });
+
+      document.getElementById("stok").innerHTML = html;
     }
 
     async function submit() {
       const kode = document.getElementById("kode").value;
       const qty = document.getElementById("qty").value;
+      const ket = document.getElementById("ket").value;
 
       if (!kode || !qty) {
         alert("Isi data dulu");
         return;
       }
 
+      const btn = event.target;
+      btn.innerText = "Loading...";
+
       const res = await fetch(API, {
         method: "POST",
         body: new URLSearchParams({
           action: "request",
           kode,
-          qty
+          qty,
+          ket
         })
       });
 
       const data = await res.json();
+
+      btn.innerText = "Kirim Request";
 
       if (data.error) {
         alert(data.error);
       } else {
         alert("Request berhasil");
         document.getElementById("qty").value = "";
+        document.getElementById("ket").value = "";
         loadPending();
       }
     }
@@ -134,8 +215,10 @@
       }
     }
 
+    updateTime();
     loadBarang();
     loadPending();
+    loadStok();
   </script>
 
 </body>
