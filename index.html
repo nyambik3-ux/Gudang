@@ -54,7 +54,7 @@
   <div id="list"></div>
 
   <script>
-    const API = "Uhttps://script.google.com/macros/s/AKfycbw67w_GYTmgHbtzQ3o7t-8lacsCRr8pPRaNogEhSj0l02JpuQVbVJvAC4cX9C01F2JZ/exec"; // GANTI
+    const API = "https://script.google.com/macros/s/AKfycbw67w_GYTmgHbtzQ3o7t-8lacsCRr8pPRaNogEhSj0l02JpuQVbVJvAC4cX9C01F2JZ/exec";
 
     async function loadBarang() {
       const res = await fetch(API + "?action=getBarang");
@@ -91,6 +91,11 @@
       const kode = document.getElementById("kode").value;
       const qty = document.getElementById("qty").value;
 
+      if (!kode || !qty) {
+        alert("Isi data dulu");
+        return;
+      }
+
       const res = await fetch(API, {
         method: "POST",
         body: new URLSearchParams({
@@ -105,7 +110,8 @@
       if (data.error) {
         alert(data.error);
       } else {
-        alert("Berhasil");
+        alert("Request berhasil");
+        document.getElementById("qty").value = "";
         loadPending();
       }
     }
