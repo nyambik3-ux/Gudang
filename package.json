@@ -1,15 +1,15 @@
-export const metadata = {
-  title: 'Gudang System',
-  description: 'Sistem Manajemen Gudang dengan Telegram',
-}
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="id">
-      <head>
-        <script src="https://cdn.tailwindcss.com"></script>
-      </head>
-      <body>{children}</body>
-    </html>
-  )
+{
+  "name": "gudang-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
 }
