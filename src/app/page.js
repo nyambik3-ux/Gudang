@@ -156,4 +156,29 @@ export default function GudangApp() {
                     <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition">
                       <td className="p-4 font-mono text-slate-400">{item["Kode"]}</td><td className="p-4 font-bold">{item["Nama Barang"]}</td>
                       <td className={`p-4 font-black ${isLow ? 'text-red-600' : 'text-slate-900'}`}>{item["Stok Sekarang"]}</td>
-                      <td className="p-4">{isLow ? <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">RESTOCK</span> : <span className="text-xs bg-
+                      <td className="p-4">{isLow ? <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">RESTOCK</span> : <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">AMAN</span>}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {role === "staff" && (
+          <div className="bg-orange-50 p-6 rounded-2xl border border-orange-200">
+            <h3 className="font-bold text-orange-800 mb-4 text-xl">🚨 Request Darurat</h3>
+            <div className="space-y-3">
+              <input type="text" placeholder="Nama Barang..." className="w-full p-3 border rounded-xl" value={formReq.detail} onChange={(e)=>setFormReq({...formReq, detail: e.target.value})} />
+              <input type="number" placeholder="Jumlah" className="w-full p-3 border rounded-xl" value={formReq.jumlah} onChange={(e)=>setFormReq({...formReq, jumlah: e.target.value})} />
+              <textarea placeholder="Alasan..." className="w-full p-3 border rounded-xl" rows="3" value={formReq.alasan} onChange={(e)=>setFormReq({...formReq, alasan: e.target.value})}></textarea>
+              <button onClick={submitRequest} disabled={loading} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition">
+                {loading ? <Spinner /> : "🚀 Kirim ke Bos"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
