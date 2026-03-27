@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxs7YINMbJBcCiLp7Iwl3HbfQMZX26wfEARMGfSZDVchWKspzkRavioJn5rXKeslLJK/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzUMVlz1g9_hLTtmzB7t_XRCyKYmMkmzmdUzCmAlc03FOb3sjRooxuQA1T6sKyaSD8WCA/exec";
 
 export default function GudangApp() {
   const [userId, setUserId] = useState("");
