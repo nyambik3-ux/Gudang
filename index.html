@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gudang System v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <div id="app" class="max-w-md mx-auto p-4 md:p-8">
+        <div id="login-section" class="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl mt-10 border border-slate-700">
+            <h1 class="text-3xl font-black text-cyan-400 mb-2">GUDANG KU</h1>
+            <p class="text-slate-400 text-sm mb-8 italic">v2.0 Stable System</p>
+            <input type="number" id="user-id" placeholder="ID PEGAWAI" class="w-full p-4 bg-slate-800 rounded-2xl mb-6 text-center text-2xl font-bold border-2 border-slate-700 focus:border-cyan-500 outline-none transition-all">
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="login('admin')" class="bg-blue-600 p-4 rounded-xl font-bold hover:bg-blue-500 transition-all">👤 ADMIN GUDANG</button>
+                <button onclick="login('akuntan')" class="bg-green-600 p-4 rounded-xl font-bold hover:bg-green-500 transition-all">📊 AKUNTAN (STOK)</button>
+            </div>
+        </div>
+
+        <div id="dashboard-section" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="role-title" class="text-xl font-black uppercase tracking-tight text-slate-800">DASHBOARD</h2>
+                    <button onclick="logout()" class="text-red-500 font-bold text-xs bg-red-50 px-3 py-1 rounded-full">LOGOUT</button>
+                </div>
+
+                <div id="admin-ui" class="hidden space-y-6">
+                    <div class="relative">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1 block">Pencarian Barang</label>
+                        <input type="text" id="search-input" oninput="searchBarang(this.value)" placeholder="Ketik Nama/Kode..." class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-400 outline-none transition-all">
+                        <div id="suggestions" class="absolute z-50 w-full bg-white mt-2 rounded-2xl shadow-2xl border border-slate-100 overflow-hidden hidden"></div>
+                    </div>
+
+                    <div id="form-transaksi" class="hidden p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 animate-pulse-once">
+                        <h3 id="selected-nama" class="text-xl font-black text-slate-800 uppercase mb-1">-</h3>
+                        <p id="selected-info" class="text-xs text-slate-500 mb-6 font-mono">-</p>
+                        <div class="flex gap-2">
+                            <input type="number" id="qty-input" placeholder="Qty" class="w-1/3 p-4 rounded-xl text-xl font-black text-center shadow-inner outline-none">
+                            <button onclick="handleKirim('MASUK')" id="btn-masuk" class="flex-1 bg-blue-600 text-white rounded-xl font-black active:scale-95 transition-all text-xs">📥 MASUK</button>
+                            <button onclick="handleKirim('KELUAR')" id="btn-keluar" class="flex-1 bg-red-500 text-white rounded-xl font-black active:scale-95 transition-all text-xs">📤 KELUAR</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="akuntan-ui" class="hidden">
+                    <button onclick="fetchStok()" class="mb-4 text-[10px] bg-slate-100 px-3 py-1 rounded-full font-bold text-slate-500 hover:bg-slate-200 uppercase">🔄 Refresh Data</button>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-[10px] text-slate-400 border-b">
+                                <tr><th class="p-2">Barang</th><th class="p-2">Masuk</th><th class="p-2">Keluar</th><th class="p-2 text-right">Stok</th></tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzUMVlz1g9_hLTtmzB7t_XRCyKYmMkmzmdUzCmAlc03FOb3sjRooxuQA1T6sKyaSD8WCA/exec";
+        
+        let currentUser = "";
+        let masterBarang = [];
+        let selectedItem = null;
+
+        function login(role) {
+            currentUser = document.getElementById('user-id').value;
+            if (!currentUser) return alert("Isi ID Pegawai dulu!");
+            
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            document.getElementById('role-title').innerText = "🚀 " + role + " Dashboard";
+
+            if (role === 'admin') {
+                document.getElementById('admin-ui').classList.remove('hidden');
+                fetchMaster();
+            } else {
+                document.getElementById('akuntan-ui').classList.remove('hidden');
+                fetchStok();
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        async function fetchMaster() {
+            const res = await fetch(`${GAS_URL}?action=readData&sheet=Barang`);
+            masterBarang = await res.json();
+        }
+
+        async function fetchStok() {
+            const body = document.getElementById('table-body');
+            body.innerHTML = '<tr><td colspan="4" class="text-center p-10 text-slate-400">Loading data...</td></tr>';
+            const res = await fetch(`${GAS_URL}?action=readData&sheet=Stok`);
+            const data = await res.json();
+            
+            body.innerHTML = '';
+            data.forEach(item => {
+                const sisa = parseInt(item["Stok Sekarang"]) || 0;
+                const min = parseInt(item["Minimum Stok"]) || 0;
+                const row = `<tr class="border-b text-sm">
+                    <td class="p-2 font-bold">${item["Nama Barang"]}<br><span class="text-[10px] font-mono text-slate-400">${item["Kode"]}</span></td>
+                    <td class="p-2 text-blue-600">${item["Stok Masuk"]}</td>
+                    <td class="p-2 text-red-500">${item["Stok Keluar"]}</td>
+                    <td class="p-2 text-right font-black ${sisa <= min ? 'text-orange-500' : 'text-slate-800'}">
+                        ${sisa} ${item["Satuan"]}
+                        ${sisa <= min ? '<br><span class="text-[8px] bg-orange-100 p-1 rounded">RE-STOCK</span>' : ''}
+                    </td>
+                </tr>`;
+                body.innerHTML += row;
+            });
+        }
+
+        function searchBarang(q) {
+            const sugBox = document.getElementById('suggestions');
+            if (q.length < 1) { sugBox.classList.add('hidden'); return; }
+
+            const filtered = masterBarang.filter(i => 
+                i["Nama Barang"].toLowerCase().includes(q.toLowerCase()) || 
+                i["Kode"].toString().includes(q)
+            );
+
+            sugBox.innerHTML = '';
+            filtered.forEach(i => {
+                const div = document.createElement('div');
+                div.className = "p-4 hover:bg-blue-50 cursor-pointer border-b flex justify-between items-center";
+                div.innerHTML = `<span class="font-bold text-sm">${i["Nama Barang"]}</span><span class="text-[10px] text-slate-400 font-mono">${i["Kode"]}</span>`;
+                div.onclick = () => pilihBarang(i);
+                sugBox.appendChild(div);
+            });
+            sugBox.classList.remove('hidden');
+        }
+
+        function pilihBarang(item) {
+            selectedItem = item;
+            document.getElementById('search-input').value = item["Nama Barang"];
+            document.getElementById('suggestions').classList.add('hidden');
+            document.getElementById('form-transaksi').classList.remove('hidden');
+            document.getElementById('selected-nama').innerText = item["Nama Barang"];
+            document.getElementById('selected-info').innerText = `ID: ${item["Kode"]} | Satuan: ${item["Satuan"]}`;
+        }
+
+        async function handleKirim(tipe) {
+            const qty = document.getElementById('qty-input').value;
+            if (!qty) return alert("Isi jumlah!");
+
+            const btn = tipe === "MASUK" ? document.getElementById('btn-masuk') : document.getElementById('btn-keluar');
+            const oldText = btn.innerText;
+            btn.innerText = "...";
+            btn.disabled = true;
+
+            const payload = {
+                action: tipe === "MASUK" ? "inputMasuk" : "inputKeluar",
+                kode: selectedItem["Kode"],
+                nama: selectedItem["Nama Barang"],
+                jumlah: qty,
+                user: currentUser
+            };
+
+            try {
+                await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+                alert("SUKSES: Data tersimpan & Notif Telegram dikirim!");
+                document.getElementById('qty-input').value = '';
+                document.getElementById('form-transaksi').classList.add('hidden');
+                document.getElementById('search-input').value = '';
+            } catch (e) { alert("Error: Gagal Kirim!"); }
+
+            btn.innerText = oldText;
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
